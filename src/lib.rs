@@ -1,11 +1,15 @@
 use std::num::ParseFloatError;
 use failure::Fail;
 
-#[derive(Debug, Fail)]
+
+#[derive(Debug, Fail, PartialEq)]
 pub enum MoneyError {
     #[fail(display = "Invalid input: {}", _0)]
     ParseAmount(ParseFloatError),
-
+    
+    #[fail(display = "{}", _0)]
+    ParseCurrency(String),
+    
     #[fail(display = "{}", _0)]
     ParseFormatting(String),
 }
@@ -16,12 +20,46 @@ impl From<ParseFloatError> for MoneyError {
     }
 }
 
-pub fn parse_money(input: &str) -> Result<(f32, String), MoneyError> {
-    let parts: Vec<&str> = input.split_whitespace().collect();
+#[derive(Debug, PartialEq)]
+enum Currency {
+    Dollar,
+    Euro,
+}
 
-    match parts[..] {
-        [amount, currency] => Ok((amount.parse()?, currency.to_string())),
-        _ => Err(MoneyError::ParseFormatting("Expecting amount and currency".into())),
+impl std::str::FromStr for Currency {
+    type Err = MoneyError;
+    
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_ref() {
+            "dollar" | "$" => Ok(Currency::Dollar),
+            "euro" | "eur" | "€" => Ok(Currency::Euro),
+            _ => Err(MoneyError::ParseCurrency("Unknown currency".into())),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+struct Money {
+    amount: f32,
+    currency: Currency,
+}
+
+impl Money {
+    fn new(amount: f32, currency: Currency) -> Self {
+        Money { amount, currency }
+    }
+}
+
+impl std::str::FromStr for Money {
+    type Err = MoneyError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<_> = s.split_whitespace().collect();
+        
+        match parts[..] {
+            [amount, currency] => Ok(Money::new(amount.parse()?, currency.parse()?)),
+            _ => Err(MoneyError::ParseFormatting("Expecting amount and currency".into())),
+        }
     }
 }
 
@@ -30,28 +68,46 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_returns_amount_and_currency_from_a_string_with_int() {
-        if let Ok((amount, currency)) = parse_money("140 Euro"){
-            assert_eq!(amount, 140.0);
-            assert_eq!(currency, "Euro");
-        } else {
-            assert!(false);
-        }
+    fn test_errors() {
+        assert_eq!(
+            "140.01".parse::<Money>(),
+            Err(MoneyError::ParseFormatting(
+                "Expecting amount and currency".into()
+            ))
+        );
+
+        let result = "OneMillion Euro".parse::<Money>();
+        assert!(result.is_err());
     }
 
     #[test]
-    fn it_returns_amount_and_currency_from_a_string_with_float() {
-        if let Ok((amount, currency)) = parse_money("140.01 Euro"){
-            assert_eq!(amount, 140.01);
-            assert_eq!(currency, "Euro");
-        } else {
-            assert!(false);
-        }
-    }
+    fn test_successful_parsing() {
+        let testcases = vec![
+            (
+                "100 Euro",
+                Money {
+                    amount: 100.0,
+                    currency: Currency::Euro,
+                },
+            ),
+            (
+                "10 $",
+                Money {
+                    amount: 10.0,
+                    currency: Currency::Dollar,
+                },
+            ),
+            (
+                "42.4 DOLLAR",
+                Money {
+                    amount: 42.4,
+                    currency: Currency::Dollar,
+                },
+            ),
+        ];
 
-    #[test]
-    fn it_handles_error_when_currency_is_missing_from_input() {
-        let _res = parse_money("140.01");
-        assert!(true);
+        for (input, output) in testcases {
+            assert_eq!(input.parse::<Money>(), Ok(output));
+        }
     }
 }
