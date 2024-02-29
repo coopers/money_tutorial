@@ -1,5 +1,11 @@
-pub fn parse_money(_input: &str) -> (i32, String) {
-    return (0, "".to_string())
+pub fn parse_money(input: &str) -> (i32, String) {
+    let parts: Vec<&str> = input.split_whitespace().collect();
+    let maybe_amount = parts[0].parse();
+    if maybe_amount.is_err() {
+        return (-1, "invalid".to_string());
+    }
+    let currency = parts[1].to_string();
+    (maybe_amount.unwrap(), currency)
 }
 
 #[cfg(test)]
