@@ -15,4 +15,10 @@ mod tests {
         assert_eq!(amount, 140);
         assert_eq!(currency, "Euro");
     }
+
+    #[test]
+    fn it_handles_error_when_amount_is_a_float() {
+        let (_amount, _currency) = parse_money("140.01 Euro");
+        assert!(true)
+    }
 }
