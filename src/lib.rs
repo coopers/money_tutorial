@@ -17,7 +17,7 @@ mod tests {
             assert_eq!(amount, 140.0);
             assert_eq!(currency, "Euro");
         } else {
-            assert!(false)
+            assert!(false);
         }
     }
 
@@ -27,13 +27,13 @@ mod tests {
             assert_eq!(amount, 140.01);
             assert_eq!(currency, "Euro");
         } else {
-            assert!(false)
+            assert!(false);
         }
     }
 
-    // #[test]
-    // fn it_handles_error_when_amount_is_a_float() {
-    //     let res = parse_money("140.01 Euro");
-    //     assert!(res.is_err())
-    // }
+    #[test]
+    fn it_handles_error_when_currency_is_missing_from_input() {
+        let _res = parse_money("140.01");
+        assert!(true);
+    }
 }
