@@ -18,11 +18,10 @@ impl From<ParseFloatError> for MoneyError {
 
 pub fn parse_money(input: &str) -> Result<(f32, String), MoneyError> {
     let parts: Vec<&str> = input.split_whitespace().collect();
-    if parts.len() != 2 {
-        Err(MoneyError::ParseFormatting("Expect amount and currency".to_string()))
-    } else {
-        let (amount, currency) = (parts[0], parts[1]);
-        Ok((amount.parse()?, currency.to_string()))
+
+    match parts[..] {
+        [amount, currency] => Ok((amount.parse()?, currency.to_string())),
+        _ => Err(MoneyError::ParseFormatting("Expecting amount and currency".into())),
     }
 }
 
